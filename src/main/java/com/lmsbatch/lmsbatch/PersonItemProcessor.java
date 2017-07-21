@@ -12,10 +12,9 @@ public class PersonItemProcessor implements ItemProcessor<Person, Person> {
 
     @Override
     public Person process(final Person person) throws Exception {
-        final String firstName = person.getFirstName().toUpperCase();
-        final String lastName = person.getLastName().toUpperCase();
-
-        final Person transformedPerson = new Person(firstName, lastName);
+        final Person transformedPerson = new Person(person.getShrStaffID(), person.getPreferredLastName(), person.getPreferredFirstName(),
+                person.getConflictGroup(), person.getEmployeeCode(),person.getBusinessUnit(), person.getState(),person.getTeam(), person.getManagerReference(),
+                person.getSecondLevelManager(), person.getRoleLocation(), person.getEmailAddressWork(), person.getActive());
 
         log.info("Converting (" + person + ") into (" + transformedPerson + ")");
 

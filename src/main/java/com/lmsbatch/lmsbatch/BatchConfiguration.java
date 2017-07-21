@@ -39,10 +39,10 @@ public class BatchConfiguration {
     @Bean
     public FlatFileItemReader<Person> reader() {
         FlatFileItemReader<Person> reader = new FlatFileItemReader<Person>();
-        reader.setResource(new ClassPathResource("sample-data.csv"));
+        reader.setResource(new ClassPathResource("50empdata.csv"));
         reader.setLineMapper(new DefaultLineMapper<Person>() {{
             setLineTokenizer(new DelimitedLineTokenizer() {{
-                setNames(new String[] { "firstName", "lastName" });
+                setNames(new String[] { "shrStaffID", "preferredLastName","preferredFirstName", "conflictGroup", "employeeCode", "businessUnit", "state", "team", "managerReference", "secondLevelManager", "roleLocation", "emailAddressWork","active"});
             }});
             setFieldSetMapper(new BeanWrapperFieldSetMapper<Person>() {{
                 setTargetType(Person.class);
@@ -60,7 +60,8 @@ public class BatchConfiguration {
     public JdbcBatchItemWriter<Person> writer() {
         JdbcBatchItemWriter<Person> writer = new JdbcBatchItemWriter<Person>();
         writer.setItemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<Person>());
-        writer.setSql("INSERT INTO people (first_name, last_name) VALUES (:firstName, :lastName)");
+        writer.setSql("INSERT INTO people (SHRStaffID,PreferredLastName,PreferredFirstName,ConflictGroup,EmployeeCode,BusinessUnit,State,Team,ManagerReference,SecondLevelManager,RoleLocation,EmailAddressWork,Active) " +
+                "VALUES (:shrStaffID, :preferredLastName, :preferredFirstName, :conflictGroup, :employeeCode, :businessUnit, :state, :team, :managerReference, :secondLevelManager, :roleLocation, :emailAddressWork, :active)");
         writer.setDataSource(dataSource);
         return writer;
     }
@@ -88,3 +89,4 @@ public class BatchConfiguration {
     }
     // end::jobstep[]
 }
+

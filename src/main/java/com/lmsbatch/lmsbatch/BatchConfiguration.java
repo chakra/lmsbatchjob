@@ -4,7 +4,6 @@ package com.lmsbatch;
 import javax.sql.DataSource;
 
 import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
@@ -20,7 +19,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.stream.Stream;
 
 @Configuration
 @EnableBatchProcessing
@@ -37,8 +42,21 @@ public class BatchConfiguration {
 
     // tag::readerwriterprocessor[]
     @Bean
-    public FlatFileItemReader<Person> reader() {
+    public FlatFileItemReader<Person> reader() throws IOException {
         FlatFileItemReader<Person> reader = new FlatFileItemReader<Person>();
+
+        String baseUrl = "https://github.com/chakra/lmsbatchjob/blob/master/src/main/resources/50empdata.csv";
+
+        URL url = new URL(baseUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        if (connection.getResponseCode() == 200) {
+            try (InputStreamReader streamReader = new InputStreamReader(connection.getInputStream());
+                 BufferedReader br = new BufferedReader(streamReader);
+                 Stream<String> lines = br.lines()) {
+                lines.forEach(s -> System.out.println(s)); //should be a method reference
+            }
+        }
+
         reader.setResource(new ClassPathResource("50empdata.csv"));
         reader.setLineMapper(new DefaultLineMapper<Person>() {{
             setLineTokenizer(new DelimitedLineTokenizer() {{
@@ -69,7 +87,7 @@ public class BatchConfiguration {
 
     // tag::jobstep[]
     @Bean
-    public Job importUserJob(JobCompletionNotificationListener listener) {
+    public Job importUserJob(JobCompletionNotificationListener listener) throws IOException {
         return jobBuilderFactory.get("importUserJob")
                 .incrementer(new RunIdIncrementer())
                 .listener(listener)
@@ -79,7 +97,7 @@ public class BatchConfiguration {
     }
 
     @Bean
-    public Step step1() {
+    public Step step1() throws IOException {
         return stepBuilderFactory.get("step1")
                 .<Person, Person> chunk(10)
                 .reader(reader())

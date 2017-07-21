@@ -1,5 +1,5 @@
 
-package com.batch;
+package com.lmsbatch;
 
 import javax.sql.DataSource;
 

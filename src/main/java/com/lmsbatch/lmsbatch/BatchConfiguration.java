@@ -3,12 +3,13 @@ package com.lmsbatch;
 
 import javax.sql.DataSource;
 
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
+import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.launch.support.SimpleJobLauncher;
+import org.springframework.batch.core.listener.JobExecutionListenerSupport;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
@@ -18,17 +19,21 @@ import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Date;
 import java.util.stream.Stream;
 
 @Configuration
 @EnableBatchProcessing
+@Import({BatchScheduler.class})
 public class BatchConfiguration {
 
     @Autowired
@@ -36,6 +41,13 @@ public class BatchConfiguration {
 
     @Autowired
     public StepBuilderFactory stepBuilderFactory;
+
+
+    @Autowired
+    private SimpleJobLauncher jobLauncher;
+
+    @Autowired
+    JobCompletionNotificationListener listener;
 
     @Autowired
     public DataSource dataSource;
@@ -45,7 +57,7 @@ public class BatchConfiguration {
     public FlatFileItemReader<Person> reader() throws IOException {
         FlatFileItemReader<Person> reader = new FlatFileItemReader<Person>();
 
-        String baseUrl = "https://github.com/chakra/lmsbatchjob/blob/master/src/main/resources/50empdata.csv";
+        /*String baseUrl = "https://github.com/chakra/lmsbatchjob/blob/master/src/main/resources/50empdata.csv";
 
         URL url = new URL(baseUrl);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -55,7 +67,7 @@ public class BatchConfiguration {
                  Stream<String> lines = br.lines()) {
                 lines.forEach(s -> System.out.println(s)); //should be a method reference
             }
-        }
+        }*/
 
         reader.setResource(new ClassPathResource("50empdata.csv"));
         reader.setLineMapper(new DefaultLineMapper<Person>() {{
@@ -84,10 +96,30 @@ public class BatchConfiguration {
         return writer;
     }
     // end::readerwriterprocessor[]
+//    "0 0 * * * *" = the top of every hour of every day.
+//     "*/10 * * * * *" = every ten seconds.
+//     "0 0 8-10 * * *" = 8, 9 and 10 o'clock of every day.
+//     "0 0 6,19 * * *" = 6:00 AM and 7:00 PM every day.
+//     "0 0/30 8-10 * * *" = 8:00, 8:30, 9:00, 9:30, 10:00 and 10:30 every day.
+//     "0 0 9-17 * * MON-FRI" = on the hour nine-to-five weekdays
+//     "0 0 0 25 12 ?" = every Christmas Day at midnight
+
+    @Scheduled(cron = "*/10 * * * * *")
+    public void perform() throws Exception {
+
+        System.out.println("Job Started at :" + new Date());
+
+        JobParameters param = new JobParametersBuilder().addString("JobID",
+                String.valueOf(System.currentTimeMillis())).toJobParameters();
+
+        JobExecution execution = jobLauncher.run(importUserJob(), param);
+
+        System.out.println("Job finished with status :" + execution.getStatus());
+    }
 
     // tag::jobstep[]
     @Bean
-    public Job importUserJob(JobCompletionNotificationListener listener) throws IOException {
+    public Job importUserJob() throws IOException {
         return jobBuilderFactory.get("importUserJob")
                 .incrementer(new RunIdIncrementer())
                 .listener(listener)
@@ -105,6 +137,8 @@ public class BatchConfiguration {
                 .writer(writer())
                 .build();
     }
-    // end::jobstep[]
+
+       // end::jobstep[]
 }
+
 

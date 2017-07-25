@@ -1,4 +1,4 @@
-package com.lmsbatch.lmsbatch;
+package com.lmsbatch;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

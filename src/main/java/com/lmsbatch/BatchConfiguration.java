@@ -57,7 +57,7 @@ public class BatchConfiguration {
     public FlatFileItemReader<Person> reader() throws IOException {
         FlatFileItemReader<Person> reader = new FlatFileItemReader<Person>();
 
-        /*String baseUrl = "https://github.com/chakra/lmsbatchjob/blob/master/src/main/resources/50empdata.csv";
+        String baseUrl = "https://github.com/chakra/lmsbatchjob/blob/master/src/main/resources/50empdata.csv";
 
         URL url = new URL(baseUrl);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -67,7 +67,7 @@ public class BatchConfiguration {
                  Stream<String> lines = br.lines()) {
                 lines.forEach(s -> System.out.println(s)); //should be a method reference
             }
-        }*/
+        }
 
         reader.setResource(new ClassPathResource("50empdata.csv"));
         reader.setLineMapper(new DefaultLineMapper<Person>() {{

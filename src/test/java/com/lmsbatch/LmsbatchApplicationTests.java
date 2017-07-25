@@ -1,4 +1,4 @@
-package com.lmsbatch.lmsbatch;
+package com.lmsbatch;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -3,6 +3,7 @@ package com.lmsbatch;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.io.FileUtils;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
@@ -23,11 +24,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Date;
 import java.util.stream.Stream;
 
@@ -46,6 +47,7 @@ public class BatchConfiguration {
     @Autowired
     private SimpleJobLauncher jobLauncher;
 
+
     @Autowired
     JobCompletionNotificationListener listener;
 
@@ -57,19 +59,15 @@ public class BatchConfiguration {
     public FlatFileItemReader<Person> reader() throws IOException {
         FlatFileItemReader<Person> reader = new FlatFileItemReader<Person>();
 
-        String baseUrl = "https://github.com/chakra/lmsbatchjob/blob/master/src/main/resources/50empdata.csv";
+        String baseUrl = "https://raw.githubusercontent.com/chakra/lmsbatchjob/master/src/main/resources/50empdata.csv";
 
         URL url = new URL(baseUrl);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         if (connection.getResponseCode() == 200) {
-            try (InputStreamReader streamReader = new InputStreamReader(connection.getInputStream());
-                 BufferedReader br = new BufferedReader(streamReader);
-                 Stream<String> lines = br.lines()) {
-                lines.forEach(s -> System.out.println(s)); //should be a method reference
-            }
+            FileUtils.copyURLToFile(url, new File("src/main/resources/emp.csv"));
         }
 
-        reader.setResource(new ClassPathResource("50empdata.csv"));
+        reader.setResource(new ClassPathResource("emp.csv"));
         reader.setLineMapper(new DefaultLineMapper<Person>() {{
             setLineTokenizer(new DelimitedLineTokenizer() {{
                 setNames(new String[] { "shrStaffID", "preferredLastName","preferredFirstName", "conflictGroup", "employeeCode", "businessUnit", "state", "team", "managerReference", "secondLevelManager", "roleLocation", "emailAddressWork","active"});
@@ -104,7 +102,7 @@ public class BatchConfiguration {
 //     "0 0 9-17 * * MON-FRI" = on the hour nine-to-five weekdays
 //     "0 0 0 25 12 ?" = every Christmas Day at midnight
 
-    @Scheduled(cron = "*/10 * * * * *")
+    @Scheduled(cron = "0 0 * * * *")
     public void perform() throws Exception {
 
         System.out.println("Job Started at :" + new Date());
